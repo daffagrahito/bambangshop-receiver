@@ -68,16 +68,16 @@ You can install Postman via this website: https://www.postman.com/downloads/
     -   [x] Commit: `Implement list_all_as_string function in Notification repository.`
     -   [x] Write answers of your learning module's "Reflection Subscriber-1" questions in this README.
 -   **STAGE 3: Implement services and controllers**
-    -   [ ] Commit: `Create Notification service struct skeleton.`
-    -   [ ] Commit: `Implement subscribe function in Notification service.`
-    -   [ ] Commit: `Implement subscribe function in Notification controller.`
-    -   [ ] Commit: `Implement unsubscribe function in Notification service.`
-    -   [ ] Commit: `Implement unsubscribe function in Notification controller.`
-    -   [ ] Commit: `Implement receive_notification function in Notification service.`
-    -   [ ] Commit: `Implement receive function in Notification controller.`
-    -   [ ] Commit: `Implement list_messages function in Notification service.`
-    -   [ ] Commit: `Implement list function in Notification controller.`
-    -   [ ] Write answers of your learning module's "Reflection Subscriber-2" questions in this README.
+    -   [x] Commit: `Create Notification service struct skeleton.`
+    -   [x] Commit: `Implement subscribe function in Notification service.`
+    -   [x] Commit: `Implement subscribe function in Notification controller.`
+    -   [x] Commit: `Implement unsubscribe function in Notification service.`
+    -   [x] Commit: `Implement unsubscribe function in Notification controller.`
+    -   [x] Commit: `Implement receive_notification function in Notification service.`
+    -   [x] Commit: `Implement receive function in Notification controller.`
+    -   [x] Commit: `Implement list_messages function in Notification service.`
+    -   [x] Commit: `Implement list function in Notification controller.`
+    -   [x] Write answers of your learning module's "Reflection Subscriber-2" questions in this README.
 
 ## Your Reflections
 This is the place for you to write reflections:
@@ -87,10 +87,21 @@ This is the place for you to write reflections:
 #### Reflection Subscriber-1
 1. ***In this tutorial, we used `RwLock<>` to synchronise the use of `Vec` of Notifications. Explain why it is necessary for this case, and explain why we do not use `Mutex<>` instead?***
 
-
-
+    `RwLock<>` ini digunakan karena `Vec<Notification>` dipakai bersama oleh banyak thread, dan tanpa synchronization maka data race bisa terjadi. Kenapa juga `RwLock<>` digunakan daripada `Mutex<>` adalah karena `RwLock<>` memperbolehkan banyak reader ataupun satu writer dalam waktu kapanpun. `Vec<Notification>` dibaca saat `list_all_as_string` method dipanggil dan di-`write` ke `add` method. Jika ada lebih banyak *read* daripada *write*, maka biasanya kasus dimana terdapat *collection of items* seperti notifications disini dengan menggunakan `RwLock<>` dapat meningkatkan performa karena memperbolehkan banyak thread untuk *read* data secara paralel. Sedangkan `Mutex<>` hanya memperbolehkan satu thread untuk mengakses data di satu waktu, baik untuk *read* maupun *write*.
+*
 2. ***In this tutorial, we used `lazy_static` external library to define `Vec` and `DashMap` as a “static” variable. Compared to Java where we can mutate the content of a static variable via a static function, why did not Rust allow us to do so?***
 
-
+    Dalam Rust, static variable bersifat global dan live untuk keseluruhan program sebagaimana juga dengan Java, tapi Rust punya aturan yang lebih strict untuk concurrency dan safety. Dalam Rust, *static variable* secara default bersifat immutable untuk menghindari data race jadi `lazy_static` disini digunakan untuk membuat sebuah *static variable* yang di *lazily initialized* yaitu *initialization* code dijalankan pertama kali saat variablenya digunakan. Lalu `RwLock<>` digunakan untuk memastikan bahwa `Vec<Notification>` bisa di-*mutate* oleh thread yang berbeda-beda demi menghindari data race.
 
 #### Reflection Subscriber-2
+1. ***Have you explored things outside of the steps in the tutorial, for example: `src/lib.rs`? If not, explain why you did not do so. If yes, explain things that you have learned from those other parts of code.***
+
+    Dari `src/lib.rs`, yang saya pahami adalah bahwa di kode tersebut terdapat beberapa setup penting yang bisa dipakai instance-instance berbeda seperti HTTP client setup, App Config management, dan beberapa error handling. HTTP client bisa dilihat dari `REQWEST_CLIENT` yang merupakan static instance dan digunakan untuk membuat suatu HTTP request ke server lain. Struct `AppConfig` digunakan untuk configure data aplikasinya seperti `instance_root_url`, `publisher_root_url`, dan `instance_name` yang bisa disetting lewat file `.env`. Lalu untuk error handlingnya terdapat struct `ErrorResponse` dan function `compose_error_response` untuk handle dan merepresentasikan suatu error di aplikasi ini.
+
+2. ***Since you have completed the tutorial by now and have tried to test your notification system by spawning multiple instances of Receiver, explain how Observer pattern eases you to plug in more subscribers. How about spawning more than one instance of Main app, will it still be easy enough to add to the system?***
+
+    Jika kita spawn lebih dari satu instance Main app, tetap saja akan mudah untuk ditambahkan ke sistem. Setiap instance dari Main app akan maintain list dari observernya sendiri. Jadi saat suatu perubahan state dalam suatu instance Main app, dia akan memberikan notifikasi observernya itu tapi tidak dengan observer instance yang lainnya. Dengan kata lain, apabila dibuat sebuah HTTP request yang tepat ke suatu API endpoint yang di expose oleh masing-masing observer maka akan terjadi hal notifikasi ke observernya itu akan diberikan. Namun jika semua observer ingin diberikan notifikasi perubahan state dari instance manapun, kita harus mengimplementasikan cara untuk membuat instancenya bisa berkomunikasi satu dengan yang lainnya. Ini bisa dilakukan yang contohnya dengan memiliki suatu shared database atau sebuah message queue yang di *read and write* oleh semua instance.
+
+3. ***Have you tried to make your own Tests, or enhance documentation on your Postman collection? If you have tried those features, tell us whether it is useful for your work (it can be your tutorial work or your Group Project).***
+
+    Menurut saya ini akan sangat berguna karena menulis test dapat memastikan kode kita bekerja sebagaimana mestinya dan bisa dengan lebih mudah membenarkan suatu bug apabila ada kedepannya. *Enchancing documentation* di Postman collection dapat mempermudah penggunaan dan pemahaman API kita karena kita bisa verifikasi response apakah sesuai atau tidak dengan compare dengan data yang aslinya di aplikasi. Pada dasarnya, documentation yang baik dapat menjelaskan yang dilakukan masing-masing endpoint API, apa parameter yang di-*expect*, apa yang di return, maupun error condition yang bisa terjadi. 
